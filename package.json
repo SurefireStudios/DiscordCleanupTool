@@ -1,7 +1,7 @@
 {
-  "name": "discord-deleter",
-  "version": "1.1.0",
-  "description": "Rate-limit-aware cleanup tool that deletes your own Discord messages in chosen DMs and channels.",
+  "name": "discord-cleanup-tool",
+  "version": "1.2.0",
+  "description": "Delete your own Discord messages from DMs, group DMs and server channels. Local browser dashboard or CLI, rate-limit aware, zero dependencies.",
   "type": "module",
   "bin": {
     "ddel": "./src/cli.js",

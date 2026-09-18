@@ -1,3 +1,5 @@
+import { BOT_USER_AGENT } from './meta.js';
+
 const BASE = 'https://discord.com/api/v10';
 
 export class DiscordError extends Error {
@@ -30,7 +32,7 @@ export class DiscordAPI {
     this.userAgent =
       userAgent ||
       (tokenType === 'bot'
-        ? 'DiscordBot (https://github.com/local/discord-deleter, 1.0.0)'
+        ? BOT_USER_AGENT
         : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
           '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
     // bucket key -> epoch ms until which we must not send

@@ -4,6 +4,7 @@ import { stdin, stdout } from 'node:process';
 import { DiscordAPI, snowflakeToDate, DiscordError } from './api.js';
 import { loadConfig, resolveTarget } from './config.js';
 import { cleanChannel } from './cleaner.js';
+import { DISPLAY_NAME, VERSION } from './meta.js';
 
 // --- tiny arg parser ---------------------------------------------------------
 
@@ -42,7 +43,7 @@ const c = {
 };
 
 const HELP = `
-${c.bold('discord-deleter')} — bulk-remove your own messages from chosen DMs and channels.
+${c.bold(DISPLAY_NAME)} ${c.dim('v' + VERSION)} — bulk-remove your own messages from chosen DMs and channels.
 
 ${c.bold('Usage')}
   ddel whoami                        Verify the token and show the account it belongs to

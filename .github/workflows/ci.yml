@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (node ${{ matrix.node }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor is what package.json declares in "engines"; the rest are the
+        # current LTS lines. The suite makes no network calls, so this is cheap.
+        node: ['18', '20', '22', '24']
+        os: [ubuntu-latest]
+        include:
+          # The dashboard binds a socket and shells out to open a browser, so
+          # prove it works off Linux too.
+          - node: '22'
+            os: windows-latest
+          - node: '22'
+            os: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Show versions
+        run: node --version && npm --version
+
+      - name: Run tests
+        run: npm test
+
+  verify:
+    name: verify no dependencies and a clean CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Assert zero runtime dependencies
+        run: |
+          deps=$(node -p "Object.keys(require('./package.json').dependencies || {}).length")
+          echo "runtime dependencies: $deps"
+          if [ "$deps" != "0" ]; then
+            echo "::error::This project must stay dependency-free; found $deps."
+            exit 1
+          fi
+
+      - name: CLI help works
+        run: node src/cli.js help
+
+      - name: Dashboard boots and serves the page
+        run: |
+          node src/dashboard.js --port 8799 --no-open &
+          pid=$!
+          for i in $(seq 1 20); do
+            if curl -sf http://127.0.0.1:8799/ > /dev/null; then break; fi
+            sleep 0.5
+          done
+          curl -sf http://127.0.0.1:8799/ | grep -q "Discord Cleanup Tool"
+          echo "dashboard served the page"
+          kill $pid

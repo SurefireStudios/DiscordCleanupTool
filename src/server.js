@@ -6,16 +6,10 @@ import { fileURLToPath } from 'node:url';
 import { DiscordAPI, DiscordError } from './api.js';
 import { cleanChannel } from './cleaner.js';
 import { DEFAULTS } from './config.js';
+import { DISPLAY_NAME, VERSION, LICENSE, REPO_URL } from './meta.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = join(ROOT, 'public');
-
-// Project metadata lives in one place; the footer reads it from here so the
-// repo link only ever has to be changed in package.json.
-const pkg = JSON.parse(
-  await readFile(join(ROOT, 'package.json'), 'utf8').catch(() => '{}')
-);
-const REPO_URL = pkg.homepage || pkg.repository?.url?.replace(/^git\+/, '') || '';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -321,8 +315,9 @@ export function createDashboard({ port = 8787, token, tokenType, userAgent } = {
           .replace('__DASHBOARD_KEY__', key)
           .replace('__PORT__', String(port))
           .replaceAll('__REPO_URL__', REPO_URL)
-          .replace('__VERSION__', pkg.version || '')
-          .replace('__LICENSE__', pkg.license || '');
+          .replaceAll('__DISPLAY_NAME__', DISPLAY_NAME)
+          .replace('__VERSION__', VERSION)
+          .replace('__LICENSE__', LICENSE);
       }
       res.writeHead(200, {
         'content-type': MIME[extname(filePath)] || 'application/octet-stream',

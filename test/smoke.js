@@ -169,4 +169,26 @@ function ok(name) {
   ok(`--delay throttles between deletes (${elapsed}ms for 5 @ 60ms)`);
 }
 
-console.log(`\n${passed}/11 checks passed\n`);
+// 12. project identity is single-sourced and real
+{
+  const meta = await import('../src/meta.js');
+  const { readFileSync } = await import('node:fs');
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(meta.NAME, pkg.name, 'meta.NAME must track package.json');
+  assert.equal(meta.VERSION, pkg.version, 'meta.VERSION must track package.json');
+  assert.ok(meta.REPO_URL.startsWith('https://github.com/'), 'repo url must be a real URL');
+  assert.ok(!meta.REPO_URL.includes('/local/'), 'placeholder repo url must not survive');
+  assert.ok(!meta.REPO_URL.endsWith('.git'), 'repo url should be browsable, not a clone url');
+  ok(`identity is single-sourced (${meta.NAME} v${meta.VERSION})`);
+}
+
+// 13. the bot User-Agent Discord sees is honest
+{
+  const { BOT_USER_AGENT, VERSION, REPO_URL } = await import('../src/meta.js');
+  assert.match(BOT_USER_AGENT, /^DiscordBot \(https:\/\/[^,]+, \d+\.\d+\.\d+\)$/);
+  assert.ok(BOT_USER_AGENT.includes(VERSION), 'UA must carry the real version');
+  assert.ok(BOT_USER_AGENT.includes(REPO_URL), 'UA must carry the real contact URL');
+  ok(`bot User-Agent is honest: ${BOT_USER_AGENT}`);
+}
+
+console.log(`\n${passed}/13 checks passed\n`);

@@ -6,10 +6,11 @@
 
 Browser dashboard *or* CLI. Runs entirely on your machine. Zero dependencies.
 
+[![CI](https://github.com/SurefireStudios/DiscordCleanupTool/actions/workflows/ci.yml/badge.svg)](https://github.com/SurefireStudios/DiscordCleanupTool/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/github/license/SurefireStudios/DiscordCleanupTool?color=blue)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A518-5FA04E?logo=node.js&logoColor=white)](https://nodejs.org)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](package.json)
-[![Tests](https://img.shields.io/badge/tests-28-blue)](test)
+[![Tests](https://img.shields.io/badge/tests-31-blue)](test)
 [![Stars](https://img.shields.io/github/stars/SurefireStudios/DiscordCleanupTool?style=flat&color=yellow)](https://github.com/SurefireStudios/DiscordCleanupTool)
 
 <img src="docs/dashboard.png" alt="The Discord Cleanup Tool dashboard: connect, choose chats, choose how much to delete" width="820">
@@ -320,7 +321,12 @@ security boundary — any page in your browser can send requests to `127.0.0.1`.
 - The token appears in no response body. `Ctrl+C`, or *Disconnect & clear token*, drops it from
   memory.
 
-Each of these is covered by a test in [`test/server.test.js`](test/server.test.js).
+Each of these is covered by a test in [`test/server.test.js`](test/server.test.js), and the
+full threat model — including what is explicitly out of scope — is in
+[SECURITY.md](SECURITY.md).
+
+**Found a vulnerability?** Please report it privately rather than opening an issue:
+[report a vulnerability](https://github.com/SurefireStudios/DiscordCleanupTool/security/advisories/new).
 
 ---
 
@@ -394,17 +400,22 @@ test/server.test.js   dashboard tests, including the security guards
 npm test
 ```
 
-28 checks, with no network calls and no real deletions. The engine suite covers limit accounting,
+31 checks, with no network calls and no real deletions. The engine suite covers limit accounting,
 pagination across pages, the ownership filter, date and text filters, dry run issuing zero
 DELETEs, 404 handling, and the delay actually being applied. The server suite covers the key
 check, CSRF and DNS-rebinding rejection, loopback binding, the token never appearing in a
-response, path traversal, job streaming, and stopping a run mid-flight.
+response, path traversal, job streaming, and stopping a run mid-flight. Two further checks
+pin the project identity so the name, version and User-Agent can't drift apart again.
+
+CI additionally verifies that the dependency tree is still empty and that the dashboard boots
+and serves its page.
 
 ## Contributing
 
 Issues and pull requests are welcome.
 
-- Run `npm test` before opening a PR.
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) — it covers setup, the ground rules, and what gets declined.
+- Run `npm test` before opening a PR. CI runs the same suite on Node 18/20/22/24 plus Windows and macOS.
 - If you touch `src/server.js`, keep the guards in `test/server.test.js` passing — they are the
   reason it's safe to hold a token in a local web server.
 - No runtime dependencies, please. Keeping the tree empty is a feature for a tool that handles

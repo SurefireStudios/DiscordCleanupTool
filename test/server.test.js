@@ -267,10 +267,19 @@ async function runJob(body) {
   ok('footer is populated from package.json metadata');
 }
 {
+  const html = await (await fetch(`${ORIGIN}/`)).text();
+  const { DISPLAY_NAME, VERSION } = await import('../src/meta.js');
+  assert.ok(html.includes(`<title>${DISPLAY_NAME}</title>`), 'page title matches the project name');
+  assert.ok(html.includes(`<h1>${DISPLAY_NAME}</h1>`), 'heading matches the project name');
+  assert.ok(html.includes(`v${VERSION}`), 'footer shows the real version');
+  assert.ok(!/__[A-Z_]+__/.test(html), 'no unsubstituted placeholders remain');
+  ok('served page carries the project name and version, no placeholders left');
+}
+{
   const res = await fetch(`${ORIGIN}/../src/config.js`);
   assert.ok(res.status === 404 || res.status === 403, `expected block, got ${res.status}`);
   ok('path traversal out of public/ is blocked');
 }
 
 server.close();
-console.log(`\n${passed}/17 checks passed\n`);
+console.log(`\n${passed}/18 checks passed\n`);

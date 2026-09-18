@@ -1,0 +1,6 @@
+node_modules/
+config.json
+*.log
+.state/
+.devmock.mjs
+.tmp-dash.log

@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="dashboard-key" content="__DASHBOARD_KEY__" />
+    <title>Discord Cleanup</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="dot" id="status-dot"></span>
+        <h1>Discord Cleanup</h1>
+      </div>
+      <div class="whoami" id="whoami">
+        <span class="muted">not connected</span>
+      </div>
+    </header>
+
+    <main>
+      <!-- Step 1 -->
+      <section class="panel" id="panel-connect">
+        <div class="panel-head">
+          <h2><span class="step">1</span> Connect</h2>
+        </div>
+        <div class="panel-body">
+          <p class="note" id="connect-note">
+            Paste your token below. It is held in this process's memory only — never written to
+            disk, never sent anywhere except discord.com.
+          </p>
+          <div class="row">
+            <label class="field grow">
+              <span>Token</span>
+              <input type="password" id="token" placeholder="paste token" autocomplete="off" spellcheck="false" />
+            </label>
+            <label class="field">
+              <span>Type</span>
+              <select id="token-type">
+                <option value="user">User account</option>
+                <option value="bot">Bot</option>
+              </select>
+            </label>
+            <button class="primary" id="btn-connect">Connect</button>
+          </div>
+          <p class="hint hidden" id="token-hint"></p>
+
+          <details class="help" id="token-help">
+            <summary>How do I find my token?</summary>
+
+            <div id="help-user">
+              <p class="note">
+                Do this in a <strong>web browser</strong>, not the Discord desktop app — the app
+                ships with developer tools disabled.
+              </p>
+              <ol class="steps">
+                <li>Open <a href="https://discord.com/app" target="_blank" rel="noopener noreferrer">discord.com/app</a> and log in.</li>
+                <li>Open developer tools: <kbd>F12</kbd>, or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd> (<kbd>Cmd</kbd>+<kbd>Option</kbd>+<kbd>I</kbd> on Mac).</li>
+                <li>Go to the <strong>Network</strong> tab.</li>
+                <li>Type <code>api</code> in the filter box.</li>
+                <li>Click around in Discord — open a DM, switch channels — so requests appear. Reload the page if the list stays empty.</li>
+                <li>Click any request to <code>discord.com/api/v10/…</code>.</li>
+                <li>Scroll to <strong>Request Headers</strong> and find the line labelled <code>authorization:</code>. The long string after it is your token.</li>
+              </ol>
+              <p class="warn">
+                <strong>That string is your account.</strong> Anyone holding it is logged in as you
+                — no password, no 2FA. Never paste it into a website, a bot, a "token checker", or
+                a script someone hands you: talking people into doing exactly that is the standard
+                Discord account-theft scam, and it's why Discord prints a giant warning in the
+                browser console. Changing your Discord password invalidates it instantly, which is
+                your kill switch if it ever leaks.
+              </p>
+              <p class="note">
+                Automating a user account is against Discord's Terms of Service and can get the
+                account terminated. It is also the only way to delete your own DM messages —
+                Discord provides no supported route. Your call.
+              </p>
+            </div>
+
+            <div id="help-bot" class="hidden">
+              <p class="note">
+                A bot token can only delete messages <strong>the bot itself sent</strong>, in
+                servers it has been added to. It cannot touch your personal DMs with other people.
+                This is the route Discord supports.
+              </p>
+              <ol class="steps">
+                <li>Open the <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer">Discord Developer Portal</a>.</li>
+                <li><strong>New Application</strong>, give it a name, then open the <strong>Bot</strong> tab.</li>
+                <li>Click <strong>Reset Token</strong> and copy the value it shows. You only get to see it once.</li>
+                <li>Under <strong>Privileged Gateway Intents</strong>, enable <strong>Message Content Intent</strong>.</li>
+                <li>Go to <strong>OAuth2 → URL Generator</strong>, tick <code>bot</code>, then the
+                  <code>Read Messages/View Channels</code> and <code>Manage Messages</code>
+                  permissions, and open the generated URL to add the bot to your server.</li>
+                <li>Paste the token above and set Type to <strong>Bot</strong>.</li>
+              </ol>
+              <p class="note">Keep a bot token secret too — regenerate it in the portal if it leaks.</p>
+            </div>
+          </details>
+
+          <details class="help">
+            <summary>Why is there no "Sign in with Discord" button?</summary>
+            <div>
+              <p class="note">
+                Because it would not work. Discord's OAuth2 sign-in issues a bearer token limited
+                to the scopes you approve — <code>identify</code>, <code>email</code>,
+                <code>guilds</code> and similar. None of them grant permission to read your
+                message history or delete your messages, and Discord publishes no scope that does.
+              </p>
+              <p class="note">
+                So an OAuth button could show your name and avatar, and nothing else. You would
+                still need to supply a token afterwards to delete anything — one extra step for
+                zero extra capability. It was left out deliberately rather than overlooked.
+              </p>
+              <p class="warn">
+                If you ever meet a site offering to clean your Discord messages via a "Login with
+                Discord" button, treat it as a red flag. Either it does not do what it claims, or
+                it is collecting a real token from you under the appearance of an official login.
+              </p>
+            </div>
+          </details>
+          <div class="connected-actions hidden" id="connected-actions">
+            <button class="ghost" id="btn-disconnect">Disconnect &amp; clear token</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2 -->
+      <section class="panel disabled" id="panel-pick">
+        <div class="panel-head">
+          <h2><span class="step">2</span> Choose chats</h2>
+          <div class="tabs">
+            <button class="tab active" id="tab-dms" data-tab="dms">Direct messages</button>
+            <button class="tab" id="tab-guilds" data-tab="guilds">Servers</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="row">
+            <input type="search" id="filter" class="grow" placeholder="Filter by name…" />
+            <button class="ghost" id="btn-refresh">Refresh</button>
+            <button class="ghost" id="btn-clear-sel">Clear selection</button>
+          </div>
+
+          <div id="guild-picker" class="row hidden">
+            <label class="field grow">
+              <span>Server</span>
+              <select id="guild-select"></select>
+            </label>
+          </div>
+
+          <div class="list" id="channel-list">
+            <p class="muted pad">Connect to load your chats.</p>
+          </div>
+
+          <p class="selected-summary" id="selected-summary">Nothing selected.</p>
+        </div>
+      </section>
+
+      <!-- Step 3 -->
+      <section class="panel disabled" id="panel-options">
+        <div class="panel-head">
+          <h2><span class="step">3</span> How much to delete</h2>
+        </div>
+        <div class="panel-body">
+          <div class="choices" id="limit-choices">
+            <label class="choice"><input type="radio" name="limit" value="50" checked /><span>Last 50</span></label>
+            <label class="choice"><input type="radio" name="limit" value="100" /><span>Last 100</span></label>
+            <label class="choice"><input type="radio" name="limit" value="500" /><span>Last 500</span></label>
+            <label class="choice danger"><input type="radio" name="limit" value="all" /><span>Everything</span></label>
+            <label class="choice"><input type="radio" name="limit" value="custom" /><span>Custom</span>
+              <input type="number" id="limit-custom" min="1" value="250" disabled />
+            </label>
+          </div>
+          <p class="note">Counts <strong>your</strong> messages, not messages scanned. Other people's messages are never touched.</p>
+
+          <details class="advanced">
+            <summary>Filters &amp; pacing</summary>
+            <div class="grid">
+              <label class="field">
+                <span>Only messages containing</span>
+                <input type="text" id="contains" placeholder="any text" />
+              </label>
+              <label class="field">
+                <span>Older than</span>
+                <input type="date" id="before" />
+              </label>
+              <label class="field">
+                <span>Newer than</span>
+                <input type="date" id="after" />
+              </label>
+              <label class="field">
+                <span>Delay between deletes (ms)</span>
+                <input type="number" id="delay" min="0" step="100" value="1200" />
+              </label>
+              <label class="field">
+                <span>Long pause every N deletes</span>
+                <input type="number" id="pause-every" min="0" value="50" />
+              </label>
+              <label class="field">
+                <span>Pause length (ms)</span>
+                <input type="number" id="pause-ms" min="0" step="500" value="5000" />
+              </label>
+            </div>
+            <p class="note">
+              Lowering the delay below ~1000ms is where accounts start tripping Discord's rate
+              limits hard. At 1200ms expect roughly 45 deletes per minute.
+            </p>
+          </details>
+
+          <div class="runbar">
+            <label class="toggle">
+              <input type="checkbox" id="dry-run" checked />
+              <span>Dry run — show what would be deleted, delete nothing</span>
+            </label>
+            <button class="primary big" id="btn-run" disabled>Preview</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Output -->
+      <section class="panel hidden" id="panel-run">
+        <div class="panel-head">
+          <h2 id="run-title">Run</h2>
+          <button class="danger-btn" id="btn-stop">Stop</button>
+        </div>
+        <div class="panel-body">
+          <div class="stats">
+            <div class="stat"><span class="n" id="s-scanned">0</span><span class="l">scanned</span></div>
+            <div class="stat"><span class="n" id="s-matched">0</span><span class="l">matched</span></div>
+            <div class="stat ok"><span class="n" id="s-deleted">0</span><span class="l" id="s-deleted-label">deleted</span></div>
+            <div class="stat"><span class="n" id="s-skipped">0</span><span class="l">skipped</span></div>
+            <div class="stat bad"><span class="n" id="s-failed">0</span><span class="l">failed</span></div>
+          </div>
+          <div class="log" id="log"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-main">
+        <span>discord-deleter <span class="muted">v__VERSION__ · __LICENSE__</span></span>
+        <nav class="footer-links">
+          <a href="__REPO_URL__" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
+          <a href="__REPO_URL__/issues" target="_blank" rel="noopener noreferrer">Report an issue</a>
+          <a href="__REPO_URL__#readme" target="_blank" rel="noopener noreferrer">Docs</a>
+        </nav>
+      </div>
+      <p class="footer-note">
+        Runs entirely on your own machine. Your token is never written to disk and is never sent
+        anywhere except discord.com. Not affiliated with Discord.
+      </p>
+    </footer>
+
+    <!-- Confirmation -->
+    <div class="modal-backdrop hidden" id="modal">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <h3 id="modal-title">Delete permanently?</h3>
+        <div id="modal-body"></div>
+        <label class="field hidden" id="modal-typeit-wrap">
+          <span>Type <strong>DELETE</strong> to confirm</span>
+          <input type="text" id="modal-typeit" autocomplete="off" />
+        </label>
+        <div class="modal-actions">
+          <button class="ghost" id="modal-cancel">Cancel</button>
+          <button class="danger-btn" id="modal-go" disabled>Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "token": "",
+  "tokenType": "user",
+  "delayMs": 1200,
+  "pauseEvery": 50,
+  "pauseMs": 5000,
+  "targets": {
+    "alex-dm": "000000000000000000",
+    "team-general": "000000000000000000"
+  }
+}

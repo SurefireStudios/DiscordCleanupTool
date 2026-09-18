@@ -1,0 +1,35 @@
+{
+  "name": "discord-deleter",
+  "version": "1.1.0",
+  "description": "Rate-limit-aware cleanup tool that deletes your own Discord messages in chosen DMs and channels.",
+  "type": "module",
+  "bin": {
+    "ddel": "./src/cli.js",
+    "ddel-dashboard": "./src/dashboard.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js",
+    "test": "node test/smoke.js && node test/server.test.js",
+    "dashboard": "node src/dashboard.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "private": true,
+  "author": "Surefire Studios",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SurefireStudios/DiscordCleanupTool.git"
+  },
+  "homepage": "https://github.com/SurefireStudios/DiscordCleanupTool",
+  "bugs": {
+    "url": "https://github.com/SurefireStudios/DiscordCleanupTool/issues"
+  },
+  "keywords": [
+    "discord",
+    "cleanup",
+    "messages",
+    "privacy"
+  ]
+}
